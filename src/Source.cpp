@@ -1,12 +1,15 @@
 #include <iostream>
 #include <stdexcept>
 
-import VulkanManager;
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.hpp"
 
-#ifndef NDEBUG
-int main(void) noexcept
+import Manager;
+
+#ifdef DEBUG
+int main(void)
 #else
-int WinMain(void) noexcept
+int WinMain(void)
 #endif
 {
 	VulkanRenderer app;
