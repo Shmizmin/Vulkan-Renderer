@@ -19,13 +19,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Helper.hpp" />
-    <ClCompile Include="src\Source.cpp" />
     <ClCompile Include="src\Manager.ixx" />
+    <ClCompile Include="src\Source.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Constant.hpp" />
     <ClInclude Include="src\stb_image.hpp" />
+    <ClInclude Include="src\tiny_obj_loader.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\frag.hlsl">

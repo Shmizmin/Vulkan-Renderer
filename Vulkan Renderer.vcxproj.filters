@@ -25,17 +25,14 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Manager.ixx">
-      <Filter>Modules</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Helper.hpp">
-      <Filter>Header Files</Filter>
+      <Filter>Resource Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\stb_image.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Constant.hpp">
+    <ClInclude Include="src\tiny_obj_loader.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -7,7 +7,7 @@ cbuffer UniformBufferObject : register(b0)
 
 struct VertexInput
 {
-	float2 inPosition : POSITION;
+	float3 inPosition : POSITION;
 	float3 inColor : COLOR;
 	float2 inTexCoord : TEXCOORD;
 };
@@ -23,7 +23,7 @@ VertexOutput VSMain(VertexInput input)
 {
 	VertexOutput output;
 	
-	output.outPosition = mul(proj, mul(view, mul(float4(input.inPosition, 0.0f, 1.0f), model)));
+	output.outPosition = mul(proj, mul(view, mul(float4(input.inPosition, 1.0f), model)));
 	output.outColor = input.inColor;
 	output.outTextCoord = input.inTexCoord;
 	
