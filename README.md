@@ -1,1 +1,1 @@
-A work-in-progess rendering engine written in pure C++/Vulkan. Currently set up to display a simple texture demo scene. Special thanks to Alex from vulkan-tutorials for provided much of the bassis code used in this project.
+A work-in-progess rendering engine written in pure C++/Vulkan. Currently set up to display a simple texture demo scene. Special thanks vulkan-tutorials for explaining basic vulkan functionality and provding code for single time commands as well as recording and execution of command buffers.
