@@ -339,7 +339,7 @@ public:
 		return vkGetPhysicalDeviceWin32PresentationSupportKHR(gpu, queue_family) == VK_TRUE;
 	}
 
-
+#pragma region Setters
 	void SetTitle(const wchar_t* title)
 	{
 		SetWindowText(hWnd, title);
@@ -375,4 +375,5 @@ public:
 		if (vkCreateWin32SurfaceKHR(instance, &win32_createInfo, NULL, &surface) != VK_SUCCESS)
 			exit(78);
 	}
+#pragma endregion
 };

@@ -10,6 +10,7 @@ struct VertexInput
 	float3 inPosition : POSITION;
 	float3 inColor : COLOR;
 	float2 inTexCoord : TEXCOORD;
+	float3 inNormal : NORMAL;
 };
 
 struct VertexOutput
@@ -17,6 +18,7 @@ struct VertexOutput
 	float4 outPosition : SV_Position;
 	float3 outColor : COLOR;
 	float2 outTextCoord : TEXCOORD;
+	float3 outNormal : NORMAL;
 };
 
 VertexOutput main(VertexInput input)
@@ -26,6 +28,7 @@ VertexOutput main(VertexInput input)
 	output.outPosition = mul(proj, mul(view, mul(model, float4(input.inPosition, 1.0f))));
 	output.outColor = input.inColor;
 	output.outTextCoord = input.inTexCoord;
+	output.outNormal = input.inNormal;
 	
 	return output;
 }
