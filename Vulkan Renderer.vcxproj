@@ -19,12 +19,20 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Manager.ixx" />
-    <ClCompile Include="src\Source.cpp" />
+    <ClCompile Include="src\Manager.cpp">
+      <FileType>Document</FileType>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Debug.hpp" />
+    <ClInclude Include="src\Event.hpp" />
+    <ClInclude Include="src\Extern.hpp" />
+    <ClInclude Include="src\Helper.hpp" />
+    <ClInclude Include="src\Renderer.hpp" />
     <ClInclude Include="src\stb_image.hpp" />
     <ClInclude Include="src\tiny_obj_loader.hpp" />
+    <ClInclude Include="src\Vertex.hpp" />
+    <ClInclude Include="src\Window.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\frag.hlsl">
@@ -99,18 +107,22 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
+    <CustomBuildAfterTargets>Build</CustomBuildAfterTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
+    <CustomBuildAfterTargets>Build</CustomBuildAfterTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
+    <CustomBuildAfterTargets>Build</CustomBuildAfterTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
+    <CustomBuildAfterTargets>Build</CustomBuildAfterTargets>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -150,6 +162,7 @@
     <CustomBuildStep>
       <Command>
       </Command>
+      <TreatOutputAsContent>false</TreatOutputAsContent>
     </CustomBuildStep>
     <PostBuildEvent>
       <Command>
@@ -206,6 +219,7 @@
     <CustomBuildStep>
       <Command>
       </Command>
+      <TreatOutputAsContent>false</TreatOutputAsContent>
     </CustomBuildStep>
     <PostBuildEvent>
       <Command>
@@ -254,6 +268,7 @@
     <CustomBuildStep>
       <Command>
       </Command>
+      <TreatOutputAsContent>false</TreatOutputAsContent>
     </CustomBuildStep>
     <PostBuildEvent>
       <Command>
@@ -314,6 +329,7 @@
     <CustomBuildStep>
       <Command>
       </Command>
+      <TreatOutputAsContent>false</TreatOutputAsContent>
     </CustomBuildStep>
     <PostBuildEvent>
       <Command>

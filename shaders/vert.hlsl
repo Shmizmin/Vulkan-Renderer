@@ -19,11 +19,11 @@ struct VertexOutput
 	float2 outTextCoord : TEXCOORD;
 };
 
-VertexOutput VSMain(VertexInput input)
+VertexOutput main(VertexInput input)
 {
 	VertexOutput output;
 	
-	output.outPosition = mul(proj, mul(view, mul(float4(input.inPosition, 1.0f), model)));
+	output.outPosition = mul(proj, mul(view, mul(model, float4(input.inPosition, 1.0f))));
 	output.outColor = input.inColor;
 	output.outTextCoord = input.inTexCoord;
 	

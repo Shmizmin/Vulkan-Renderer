@@ -21,10 +21,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Source.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Manager.ixx">
+    <ClCompile Include="src\Manager.cpp">
       <Filter>Resource Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -34,6 +31,27 @@
     </ClInclude>
     <ClInclude Include="src\tiny_obj_loader.hpp">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Renderer.hpp">
+      <Filter>Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Extern.hpp">
+      <Filter>Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Window.hpp">
+      <Filter>Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Event.hpp">
+      <Filter>Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Vertex.hpp">
+      <Filter>Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Debug.hpp">
+      <Filter>Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Helper.hpp">
+      <Filter>Modules</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

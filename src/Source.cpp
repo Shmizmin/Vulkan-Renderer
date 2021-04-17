@@ -1,30 +1,33 @@
+﻿#include <windows.h>
 #include <iostream>
-#include <stdexcept>
+#include "./Extern.hpp"
+#include "./Renderer.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.hpp"
+#include "./stb_image.hpp"
 
 #define TINYOBJLOADER_IMPLEMENTATION
-#include "tiny_obj_loader.hpp"
+#include "./tiny_obj_loader.hpp"
 
-import Manager;
+
+std::size_t frameCount = 0ui64;
 
 #ifdef DEBUG
-int main(void)
+int WINAPI main(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 #else
-int WinMain(void)
+int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 #endif
 {
-	VulkanRenderer app;
+	VulkanRenderer renderer{};
 
 	try
 	{
-		app.run();
+		renderer.run();
 	}
 
 	catch (const std::exception& e)
 	{
-		std::cout << e.what() << std::endl;
+		std::cout << e.what() << '\n';
 		return EXIT_FAILURE;
 	}
 
