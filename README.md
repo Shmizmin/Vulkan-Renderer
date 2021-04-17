@@ -1,0 +1,1 @@
+A work-in-progess rendering engine written in pure C++/Vulkan. Currently set up to display a simple demo scene with first person camera enabled. Hold escape to unlock mouse. Special thanks vulkan-tutorials for explaining basic vulkan functionality and provding code for single time commands as well as recording and execution of command buffers.
