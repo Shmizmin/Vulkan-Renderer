@@ -28,7 +28,7 @@ VertexOutput main(VertexInput input)
 	output.outPosition = mul(proj, mul(view, mul(model, float4(input.inPosition, 1.0f))));
 	output.outColor = input.inColor;
 	output.outTextCoord = input.inTexCoord;
-	output.outNormal = input.inNormal;
+	output.outNormal = mul(model, float4(input.inNormal, 1.0f)).xyz;
 	
 	return output;
 }

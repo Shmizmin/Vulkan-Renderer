@@ -24,7 +24,7 @@
 
 //constexpr auto MODEL_PATH = "./resources/viking_room.obj";
 //constexpr auto TEXTURE_PATH = "./resources/viking_room.png";
-constexpr auto MODEL_PATH = "./resources/test.obj";
+constexpr auto MODEL_PATH = "./resources/pendulum.obj";
 constexpr auto TEXTURE_PATH = "./resources/512X512.png";
 
 constexpr auto MAX_FRAMES_IN_FLIGHT = 2;
@@ -138,6 +138,15 @@ private:
 	bool shouldCenter = false;
 
 	float pubTime;
+
+
+	float grav = 10.0f;
+
+	float posA = 1.0f;
+	float velA = 0.0f;
+	float accA = 0.0f;
+
+
 #pragma endregion
 	
 #pragma region UserFunctions
@@ -200,6 +209,15 @@ private:
 				if (pitch <= glm::radians(-80.0f)) pitch = glm::radians(-80.0f);
 			}
 		}
+
+		accA = -grav * std::sinf(posA);
+
+		velA += accA * pubTime;
+		posA += velA * pubTime;
+		
+		//std::cout << posA << std::endl;
+		//std::cout << velA << std::endl;
+		//std::cout << accA << std::endl;
 	}
 
 	void OnDestroy()
@@ -855,7 +873,7 @@ private:
 	{
 		int texWidth, texHeight, texChannels;
 		stbi_uc* pixels = stbi_load(TEXTURE_PATH, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-		VkDeviceSize imageSize = (texWidth * texHeight * 4);
+		VkDeviceSize imageSize = (static_cast<std::uint64_t>(texWidth) * static_cast<std::uint64_t>(texHeight) * 4ui64);
 
 		mipLevels = static_cast<std::uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1ui32;
 
@@ -1490,9 +1508,13 @@ private:
 		auto l = cameraPos + cameraDirection;
 
 
+		auto trans = glm::translate(glm::vec3(0.0f, 0.0f, 2.0f));
+		auto rotate = glm::rotate(posA, glm::vec3(1.0f, 0.0f, 0.0f));
+
+		auto model = trans * rotate;
+
 		auto view = glm::lookAt(cameraPos, l, cameraUp);
-		auto model = glm::translate(glm::vec3(0.0f, 0.0f, 2.0f));
-		auto proj = glm::perspective(glm::radians(90.0f), (FLOAT)swapChainExtent.width / (FLOAT)swapChainExtent.height, 0.1f, 100.0f);
+		auto proj = glm::perspective(glm::radians(90.0f), (static_cast<float>(swapChainExtent.width) / static_cast<float>(swapChainExtent.height)), 0.1f, 100.0f);
 		proj[1][1] *= -1.0f;
 
 		ubo.model = model;
