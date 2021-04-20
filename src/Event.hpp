@@ -23,11 +23,14 @@ const unsigned char WIN32_TO_HID[256] =
 	  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0     //256
 };
 
+enum Action
+{ 
+	UP,
+	DOWN,
+	MOVE
+};
 
-
-enum eAction { eUP, eDOWN, eMOVE };
-
-enum eKeycode
+enum Key
 {
 	KEY_NONE = 0, // Undefined. (No event)
 	KEY_A = 4,
@@ -159,13 +162,13 @@ struct EventType
 	enum { NONE, MOUSE, KEY, TEXT, MOVE, RESIZE, FOCUS, TOUCH, CLOSE, UNKNOWN } tag; // event type
 	union
 	{
-		struct { eAction action; std::int16_t x; std::int16_t y; std::uint8_t btn; } mouse;     // mouse move/click
-		struct { eAction action; eKeycode keycode; } key;       // Keyboard key state
+		struct { Action action; std::int16_t x; std::int16_t y; std::uint8_t btn; } mouse;     // mouse move/click
+		struct { Action action; Key keycode; } key;       // Keyboard key state
 		struct { const char* str; } text;      // Text entered
 		struct { std::int16_t x; std::int16_t y; } move;      // Window move
 		struct { std::uint16_t width; std::uint16_t height; } resize;    // Window resize
 		struct { bool has_focus; } focus;     // Window gained/lost focus
-		struct { eAction action; float x; float y; std::uint8_t id; } touch;     // multi-touch display
+		struct { Action action; float x; float y; std::uint8_t id; } touch;     // multi-touch display
 		struct {                                                  } close;     // Window is closing
 	};
 };

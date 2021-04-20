@@ -15,12 +15,18 @@
 #define WM_RESHAPE (WM_USER + 0)
 #define WM_ACTIVE  (WM_USER + 1)
 
+constexpr auto eventStackSize = 3;
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch (uMsg)
 	{
+		case WM_PAINT:
+			//if (frameCount > 1) frameDraw();
+			return 0;
+	
 		case WM_ERASEBKGND:
-			if (frameCount > 1) std::invoke(frameDraw);
+			//if (frameCount > 1) frameDraw();
 			return 0;
 
 		case WM_CLOSE:
@@ -29,10 +35,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		
 		case WM_DESTROY:
 			PostQuitMessage(0);
-			return 0;
-
-		case WM_PAINT:
-			if (frameCount > 1) std::invoke(frameDraw);
 			return 0;
 		
 		case WM_GETMINMAXINFO:
@@ -67,6 +69,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 
+struct HWButton
+{
+	bool pressed = false;
+	bool held = false;
+	bool released = false;
+
+	HWButton() = default;
+};
+
 struct Window32
 {
 public:
@@ -74,31 +85,32 @@ public:
 	HWND hWnd;
 
 	struct { std::int16_t x; std::int16_t y; }mousepos = {};
+
 	bool mouse[5] = {};
 	bool keys[256] = {};
 
 	bool running = false;
-	bool textinput = false;
 	bool has_focus = false;
-	EventFIFO<3> eventFIFO;
+	EventFIFO<eventStackSize> eventFIFO;
 
 	struct shape_t { std::int16_t x; std::int16_t y; std::int16_t width; std::int16_t height; } shape = {};
 	VkInstance  instance = 0;
 	VkSurfaceKHR surface = 0;
 
-	EventType MouseEvent(eAction action, std::int16_t x, std::int16_t y, uint8_t btn)
+#pragma region Events
+	EventType MouseEvent(Action action, std::int16_t x, std::int16_t y, uint8_t btn)
 	{
 		mousepos = { x, y };
-		if (action != eMOVE) mouse[btn] = (action == eDOWN);
+		if (action != MOVE) mouse[btn] = (action == DOWN);
 		EventType e = { EventType::MOUSE, {action, x, y, btn} };
 		return e;
 	}
 
-	EventType KeyEvent(eAction action, uint8_t key)
+	EventType KeyEvent(Action action, uint8_t key)
 	{
-		keys[key] = (action == eDOWN);
+		keys[key] = (action == DOWN);
 		EventType e = { EventType::KEY };
-		e.key = { action, (eKeycode)key };
+		e.key = { action, static_cast<Key>(key) };
 		return e;
 	}
 
@@ -140,6 +152,7 @@ public:
 		running = false;
 		return { EventType::CLOSE };
 	}
+#pragma endregion
 
 	template<bool Wait = false>
 	EventType GetEvent()
@@ -175,36 +188,36 @@ public:
 			
 
 			static char buf[4] = {};
-			uint8_t bestBtn = BtnState(1) ? 1 : BtnState(2) ? 2 : BtnState(3) ? 3 : 0;
+			std::uint8_t bestBtn = BtnState(1) ? 1 : BtnState(2) ? 2 : BtnState(3) ? 3 : 0;
 			switch (msg.message)
 			{	
-				case WM_MOUSEMOVE: return MouseEvent(eMOVE, x, y, bestBtn);
-				case WM_LBUTTONDOWN: return MouseEvent(eDOWN, x, y, 1);
-				case WM_MBUTTONDOWN: return MouseEvent(eDOWN, x, y, 2);
-				case WM_RBUTTONDOWN: return MouseEvent(eDOWN, x, y, 3);
-				case WM_LBUTTONUP: return MouseEvent(eUP, x, y, 1);
-				case WM_MBUTTONUP: return MouseEvent(eUP, x, y, 2);
-				case WM_RBUTTONUP: return MouseEvent(eUP, x, y, 3);
+				case WM_MOUSEMOVE:   return MouseEvent(MOVE, x, y, bestBtn);
+				case WM_LBUTTONDOWN: return MouseEvent(DOWN, x, y, 1);
+				case WM_MBUTTONDOWN: return MouseEvent(DOWN, x, y, 2);
+				case WM_RBUTTONDOWN: return MouseEvent(DOWN, x, y, 3);
+				case WM_LBUTTONUP:   return MouseEvent(UP, x, y, 1);
+				case WM_MBUTTONUP:   return MouseEvent(UP, x, y, 2);
+				case WM_RBUTTONUP:   return MouseEvent(UP, x, y, 3);
 
 				case WM_MOUSEWHEEL:
 				{
-					uint8_t wheel = (GET_WHEEL_DELTA_WPARAM(msg.wParam) > 0) ? 4 : 5;
+					std::uint8_t wheel = (GET_WHEEL_DELTA_WPARAM(msg.wParam) > 0) ? 4 : 5;
 					POINT point = { x, y };
 					ScreenToClient(msg.hwnd, &point);
-					return { EventType::MOUSE, {eDOWN, (std::int16_t)point.x, (std::int16_t)point.y, wheel} };
+					return { EventType::MOUSE, { DOWN, static_cast<std::int16_t>(point.x), static_cast<std::int16_t>(point.y), wheel} };
 				}
 
-				case WM_KEYDOWN: return KeyEvent(eDOWN, WIN32_TO_HID[msg.wParam]);
+				case WM_KEYDOWN: return KeyEvent(DOWN, WIN32_TO_HID[msg.wParam]);
 
-				case WM_KEYUP: return KeyEvent(eUP, WIN32_TO_HID[msg.wParam]);
+				case WM_KEYUP: return KeyEvent(UP, WIN32_TO_HID[msg.wParam]);
 
 				case WM_SYSKEYDOWN:
 				{
 					MSG discard; GetMessage(&discard, NULL, 0, 0);
-					return KeyEvent(eDOWN, WIN32_TO_HID[msg.wParam]);
+					return KeyEvent(DOWN, WIN32_TO_HID[msg.wParam]);
 				}
 
-				case WM_SYSKEYUP: return KeyEvent(eUP, WIN32_TO_HID[msg.wParam]);
+				case WM_SYSKEYUP: return KeyEvent(UP, WIN32_TO_HID[msg.wParam]);
 
 				case WM_CHAR: { strncpy_s(buf, (const char*)&msg.wParam, 4);  return TextEvent(buf); }
 
@@ -242,20 +255,24 @@ public:
 	}
 
 	void Close() { eventFIFO.push(CloseEvent()); }
-	bool KeyState(eKeycode key) { return keys[key]; }
-	bool BtnState(std::uint8_t btn) { return (btn < 3) ? mouse[btn] : 0; }
+
+	bool KeyState(Key key) { return (keys[key]); }
+	bool BtnState(std::uint8_t btn) { return (btn < 3) ? (mouse[btn]) : false; }
+
+	//HWButton GetMouse(std::uint8_t button) { return curMouse[button]; }
+	//HWButton GetKey(Key key) { return curKeys[key]; }
+
 	void MousePos(std::int16_t& x, std::int16_t& y) { x = mousepos.x; y = mousepos.y; }
 
 
-
 public:
-	void OnMouseEvent(eAction action, std::int16_t x, std::int16_t y, std::uint8_t btn) {}
-	void OnKeyEvent(eAction action, eKeycode keycode) {}
+	void OnMouseEvent(Action action, std::int16_t x, std::int16_t y, std::uint8_t btn) {}
+	void OnKeyEvent(Action action, Key keycode) {}
 	void OnTextEvent(const char* str) {}
 	void OnMoveEvent(std::int16_t x, std::int16_t y) { }
 	void OnResizeEvent(std::int16_t width, std::int16_t height) { }
 	void OnFocusEvent(bool hasFocus) {}
-	void OnTouchEvent(eAction action, float x, float y, std::uint8_t id) {}
+	void OnTouchEvent(Action action, float x, float y, std::uint8_t id) {}
 	void OnCloseEvent() {}
 
 	template<bool Wait>
@@ -266,12 +283,12 @@ public:
 		{
 			switch (e.tag)
 			{
-				case EventType::MOUSE: OnMouseEvent(e.mouse.action, e.mouse.x, e.mouse.y, e.mouse.btn);  break;
-				case EventType::KEY: OnKeyEvent(e.key.action, e.key.keycode);                        break;
-				case EventType::TEXT: OnTextEvent(e.text.str);                                         break;
-				case EventType::MOVE: OnMoveEvent(e.move.x, e.move.y);                                 break;
-				case EventType::RESIZE: OnResizeEvent(e.resize.width, e.resize.height);                    break;
-				case EventType::FOCUS: OnFocusEvent(e.focus.has_focus);                                  break;
+				case EventType::MOUSE: OnMouseEvent(e.mouse.action, e.mouse.x, e.mouse.y, e.mouse.btn); break;
+				case EventType::KEY: OnKeyEvent(e.key.action, e.key.keycode);                           break;
+				case EventType::TEXT: OnTextEvent(e.text.str);                                          break;
+				case EventType::MOVE: OnMoveEvent(e.move.x, e.move.y);                                  break;
+				case EventType::RESIZE: OnResizeEvent(e.resize.width, e.resize.height);                 break;
+				case EventType::FOCUS: OnFocusEvent(e.focus.has_focus);                                 break;
 				case EventType::CLOSE: OnCloseEvent(); return false;
 				default: break;
 			}

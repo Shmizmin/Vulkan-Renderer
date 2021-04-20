@@ -91,7 +91,7 @@ private:
 	VkImageView textureImageView;
 	VkSampler textureSampler;
 
-	VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
+	VkSampleCountFlagBits msaaSamples;
 
 	VkImage colorImage;
 	VkDeviceMemory colorImageMemory;
@@ -135,10 +135,9 @@ private:
 	std::size_t currentFrame = 0;
 
 	bool framebufferResized = false;
-	bool shouldCenter = false;
+	bool shouldCenter = true;
 
 	float pubTime;
-
 
 	float grav = 10.0f;
 
@@ -146,6 +145,14 @@ private:
 	float velA = 0.0f;
 	float accA = 0.0f;
 
+	std::array<bool, 256> newKeys{ false };
+	std::array<bool, 256> oldKeys{ false };
+
+	std::array<bool, 5> newMouse{ false };
+	std::array<bool, 5> oldMouse{ false };
+
+	std::array<HWButton, 256> keyState{ {} };
+	std::array<HWButton, 5> mouseState{ {} };
 
 #pragma endregion
 	
@@ -158,29 +165,32 @@ private:
 	void OnUpdate()
 	{
 		{
-			shouldCenter = !(window.KeyState(eKeycode::KEY_Escape));
+			auto GetKey = [&](Key key) -> auto { return keyState[key]; };
+			auto GetMouse = [&](Key key) -> auto { return mouseState[key]; };
 
-			if (window.KeyState(eKeycode::KEY_W) == true)
+			if (GetKey(Key::KEY_Escape).pressed)
+				shouldCenter = !shouldCenter;
+
+			if (GetKey(Key::KEY_W).held)
 				(cameraVel += ((cameraDirection * pubTime) * 100.0f));
-
-			if (window.KeyState(eKeycode::KEY_S) == true)
+			
+			if (GetKey(Key::KEY_S).held)
 				(cameraVel -= ((cameraDirection * pubTime) * 100.0f));
-
-			if (window.KeyState(eKeycode::KEY_D) == true)
+			
+			if (GetKey(Key::KEY_D).held)
 				(cameraVel += ((cameraRight * pubTime) * 100.0f));
-
-			if (window.KeyState(eKeycode::KEY_A) == true)
+				
+			if (GetKey(Key::KEY_A).held)
 				(cameraVel -= ((cameraRight * pubTime) * 100.0f));
-
-			if (window.KeyState(eKeycode::KEY_Space) == true)
+			
+			if (GetKey(Key::KEY_Space).held)
 				(cameraVel += ((trueCameraUp * pubTime) * 100.0f));
-
-			if (window.KeyState(eKeycode::KEY_LeftShift) == true)
+			
+			if (GetKey(Key::KEY_LeftShift).held)
 				(cameraVel -= ((trueCameraUp * pubTime) * 100.0f));
 
 
 			cameraPos += (cameraVel * pubTime);
-
 			cameraVel /= (pubTime + 1.0008f);
 		}
 
@@ -205,6 +215,7 @@ private:
 
 				SetCursorPos(((r.left + r.right) / 2), ((r.top + r.bottom) / 2));
 
+
 				if (pitch >= glm::radians(+80.0f)) pitch = glm::radians(+80.0f);
 				if (pitch <= glm::radians(-80.0f)) pitch = glm::radians(-80.0f);
 			}
@@ -214,10 +225,6 @@ private:
 
 		velA += accA * pubTime;
 		posA += velA * pubTime;
-		
-		//std::cout << posA << std::endl;
-		//std::cout << velA << std::endl;
-		//std::cout << accA << std::endl;
 	}
 
 	void OnDestroy()
@@ -232,6 +239,7 @@ private:
 		{
 			auto startTime = std::chrono::high_resolution_clock::now();
 
+			syncKeyState();
 			OnUpdate();
 			drawFrame();
 
@@ -272,7 +280,7 @@ private:
 		createSyncObjects();
 	}
 
-
+#pragma region Cleanup
 	void cleanupSwapChain()
 	{
 		vkDestroyImageView(device, colorImageView, nullptr);
@@ -342,6 +350,44 @@ private:
 
 		vkDestroySurfaceKHR(instance, surface, nullptr);
 		vkDestroyInstance(instance, nullptr);
+	}
+#pragma endregion
+
+	void syncKeyState()
+	{
+		auto ScanHardware = [&]<std::size_t keyCount>(bool* inputSource, std::array<bool, keyCount>&newS, std::array<bool, keyCount>&oldS, std::array<HWButton, keyCount>&state)
+		{
+			for (auto i = 0z; i < keyCount; ++i)
+			{
+				state[i].pressed = false;
+				state[i].released = false;
+
+				oldS[i] = newS[i];
+				newS[i] = inputSource[i];
+
+				if (oldS[i] != newS[i])
+				{
+					state[i].held = false;
+
+					if (newS[i])
+					{
+						state[i].pressed = !state[i].held;
+						state[i].held = true;
+					}
+
+					else
+					{
+						state[i].released = true;
+						state[i].held = false;
+					}
+				}
+
+				oldS[i] = newS[i];
+			}
+		};
+
+		ScanHardware(window.keys, newKeys, oldKeys, keyState);
+		ScanHardware(window.mouse, newMouse, oldMouse, mouseState);
 	}
 
 	void recreateSwapChain()
@@ -463,10 +509,11 @@ private:
 		QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
 
 		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-		std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+		std::set<std::uint32_t> uniqueQueueFamilies = { *indices.graphicsFamily, *indices.presentFamily };
 
 		float queuePriority = 1.0f;
-		for (uint32_t queueFamily : uniqueQueueFamilies) {
+		for (auto queueFamily : uniqueQueueFamilies)
+		{
 			VkDeviceQueueCreateInfo queueCreateInfo{};
 			queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 			queueCreateInfo.queueFamilyIndex = queueFamily;
@@ -500,9 +547,8 @@ private:
 			createInfo.enabledLayerCount = 0;
 		}
 
-		if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
+		if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS)
 			throw std::runtime_error("failed to create logical device!");
-		}
 
 		vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
 		vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
@@ -632,7 +678,7 @@ private:
 		std::array<VkAttachmentDescription, 3> attachments = { colorAttachment, depthAttachment, colorAttachmentResolve };
 		VkRenderPassCreateInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-		renderPassInfo.attachmentCount = static_cast<std::uint32_t>(attachments.size());
+		renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
 		renderPassInfo.pAttachments = attachments.data();
 		renderPassInfo.subpassCount = 1;
 		renderPassInfo.pSubpasses = &subpass;
@@ -699,7 +745,7 @@ private:
 		auto attributeDescriptions = Vertex::getAttributeDescriptions();
 
 		vertexInputInfo.vertexBindingDescriptionCount = 1;
-		vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+		vertexInputInfo.vertexAttributeDescriptionCount = static_cast<std::uint32_t>(attributeDescriptions.size());
 		vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
 		vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
@@ -741,6 +787,7 @@ private:
 		VkPipelineMultisampleStateCreateInfo multisampling{};
 		multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 		multisampling.sampleShadingEnable = VK_FALSE;
+		//multisampling.rasterizationSamples = msaaSamples;
 		multisampling.rasterizationSamples = msaaSamples;
 
 		VkPipelineDepthStencilStateCreateInfo depthStencil{};
@@ -893,7 +940,7 @@ private:
 		createImage(texWidth, texHeight, mipLevels, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
 
 		transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels);
-		copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+		copyBufferToImage(stagingBuffer, textureImage, static_cast<std::uint32_t>(texWidth), static_cast<std::uint32_t>(texHeight));
 		
 		generateMipmaps(textureImage, VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, mipLevels);
 
@@ -1147,24 +1194,24 @@ private:
 
 				vertex.pos =
 				{
-					attrib.vertices[3z * (std::size_t)index.vertex_index + 0z],
-					attrib.vertices[3z * (std::size_t)index.vertex_index + 1z],
-					attrib.vertices[3z * (std::size_t)index.vertex_index + 2z]
+					attrib.vertices[3z * static_cast<std::size_t>(index.vertex_index) + 0z],
+					attrib.vertices[3z * static_cast<std::size_t>(index.vertex_index) + 1z],
+					attrib.vertices[3z * static_cast<std::size_t>(index.vertex_index) + 2z]
 				};
 
 				vertex.texCoord =
 				{
-					attrib.texcoords[2z * (std::size_t)index.texcoord_index + 0z],
-					1.0f - attrib.texcoords[2z * (std::size_t)index.texcoord_index + 1z]
+					attrib.texcoords[2z * static_cast<std::size_t>(index.texcoord_index) + 0z],
+					1.0f - attrib.texcoords[2z * static_cast<std::size_t>(index.texcoord_index) + 1z]
 				};
 
 				vertex.color = { 1.0f, 1.0f, 1.0f };
 
 				vertex.normal =
 				{
-					attrib.normals[3z * (std::size_t)index.normal_index + 0z],
-					attrib.normals[3z * (std::size_t)index.normal_index + 1z],
-					attrib.normals[3z * (std::size_t)index.normal_index + 2z]
+					attrib.normals[3z * static_cast<std::size_t>(index.normal_index) + 0z],
+					attrib.normals[3z * static_cast<std::size_t>(index.normal_index) + 1z],
+					attrib.normals[3z * static_cast<std::size_t>(index.normal_index) + 2z]
 				};
 
 				if (uniqueVertices.count(vertex) == 0)
@@ -1196,7 +1243,7 @@ private:
 
 		void* data;
 		vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-		memcpy(data, vertices.data(), (std::size_t)bufferSize);
+		memcpy(data, vertices.data(), static_cast<std::size_t>(bufferSize));
 		vkUnmapMemory(device, stagingBufferMemory);
 
 		createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory);
@@ -1217,7 +1264,7 @@ private:
 
 		void* data;
 		vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-		memcpy(data, indices.data(), (std::size_t)bufferSize);
+		memcpy(data, indices.data(), static_cast<std::size_t>(bufferSize));
 		vkUnmapMemory(device, stagingBufferMemory);
 
 		createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory);
@@ -1415,7 +1462,7 @@ private:
 		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 		allocInfo.commandPool = commandPool;
 		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		allocInfo.commandBufferCount = (std::uint32_t)commandBuffers.size();
+		allocInfo.commandBufferCount = static_cast<std::uint32_t>(commandBuffers.size());
 
 		if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != VK_SUCCESS)
 			throw std::runtime_error("failed to allocate command buffers!");
@@ -1800,7 +1847,7 @@ private:
 
 			for (const auto& layerProperties : availableLayers)
 			{
-				if (strcmp(layerName, layerProperties.layerName) == 0)
+				if (std::strcmp(layerName, layerProperties.layerName) == 0)
 				{
 					layerFound = true;
 					break;
@@ -1825,7 +1872,7 @@ private:
 			throw std::runtime_error("failed to open file!");
 		}
 
-		size_t fileSize = (size_t)file.tellg();
+		std::size_t fileSize = static_cast<std::size_t>(file.tellg());
 		std::vector<char> buffer(fileSize);
 
 		file.seekg(0);
