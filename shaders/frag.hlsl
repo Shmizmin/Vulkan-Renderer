@@ -12,7 +12,7 @@ struct PixelInput
 float4 main(PixelInput input) : SV_Target
 {
 	float4 pos = input.inPosition;
-	float3 prod = ((dot(input.inNormal, float3(0.0f, 1.0f, 0.0f)) + 1.0f) * 0.5f);
+	float3 prod = ((dot(input.inNormal, float3(1.0f, 0.2f, 0.0f)) + 1.0f) * 0.5f);
 	
 	float3 dp = pow(prod, 3);
 	

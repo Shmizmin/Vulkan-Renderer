@@ -20,12 +20,13 @@
 #include "./tiny_obj_loader.hpp"
 
 #include <glm.hpp>
+#include <gtx\euler_angles.hpp>
 #include <vulkan/vulkan.h>
 
 //constexpr auto MODEL_PATH = "./resources/viking_room.obj";
 //constexpr auto TEXTURE_PATH = "./resources/viking_room.png";
-constexpr auto MODEL_PATH = "./resources/pendulum.obj";
-constexpr auto TEXTURE_PATH = "./resources/512X512.png";
+constexpr auto MODEL_PATH = "./resources/mountain.obj";
+constexpr auto TEXTURE_PATH = "./resources/grass.png";
 
 constexpr auto MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -119,17 +120,17 @@ private:
 
 	float pitch = 0.0f;
 	float yaw = 0.0f;
+	float roll = 0.0f;
 
-	glm::vec2 mouse;
-	glm::vec2 screenCenter;
+	float fov = 90.0f;
 
-	glm::vec3 cameraLook = { 0.0f, 0.0f, 0.0f };
+	glm::vec3 cameraLook = { 0.0f, 0.0f, 1.0f };
 	glm::vec3 cameraPos = { 0.0f, 0.0f, 0.0f };
 	glm::vec3 cameraVel = { 0.0f, 0.0f, 0.0f };
 	glm::vec3 cameraDirection = { 0.0f, 0.0f, 0.0f };
 
-	glm::vec3 trueCameraUp;
-	glm::vec3 cameraUp = { 0.0f, 1.0f, 0.0f };
+	glm::vec3 cameraUp;
+	glm::vec3 worldUp = { 0.0f, 1.0f, 0.0f };
 	glm::vec3 cameraRight;
 
 	std::size_t currentFrame = 0;
@@ -165,33 +166,45 @@ private:
 	void OnUpdate()
 	{
 		{
-			auto GetKey = [&](Key key) -> auto { return keyState[key]; };
-			auto GetMouse = [&](Key key) -> auto { return mouseState[key]; };
+			auto GetKey = [&](auto key) -> auto& { return keyState[key]; };
+			auto GetMouse = [&](auto key) -> auto& { return mouseState[key]; };
 
 			if (GetKey(Key::KEY_Escape).pressed)
 				shouldCenter = !shouldCenter;
 
+			if (GetKey(Key::KEY_Q).held)
+				roll -= (pubTime);
+
+			if (GetKey(Key::KEY_E).held)
+				roll += (pubTime);
+
+			if (GetKey(Key::KEY_Minus).held)
+				fov -= (pubTime);
+
+			if (GetKey(Key::KEY_Equals).held)
+				fov += (pubTime);
+
 			if (GetKey(Key::KEY_W).held)
-				(cameraVel += ((cameraDirection * pubTime) * 100.0f));
+				(cameraVel += ((cameraLook * pubTime) * 50.0f));
 			
 			if (GetKey(Key::KEY_S).held)
-				(cameraVel -= ((cameraDirection * pubTime) * 100.0f));
+				(cameraVel -= ((cameraLook * pubTime) * 50.0f));
 			
 			if (GetKey(Key::KEY_D).held)
-				(cameraVel += ((cameraRight * pubTime) * 100.0f));
+				(cameraVel -= ((cameraRight * pubTime) * 50.0f));
 				
 			if (GetKey(Key::KEY_A).held)
-				(cameraVel -= ((cameraRight * pubTime) * 100.0f));
+				(cameraVel += ((cameraRight * pubTime) * 50.0f));
 			
 			if (GetKey(Key::KEY_Space).held)
-				(cameraVel += ((trueCameraUp * pubTime) * 100.0f));
+				(cameraVel += ((cameraUp * pubTime) * 50.0f));
 			
 			if (GetKey(Key::KEY_LeftShift).held)
-				(cameraVel -= ((trueCameraUp * pubTime) * 100.0f));
+				(cameraVel -= ((cameraUp * pubTime) * 50.0f));
 
 
 			cameraPos += (cameraVel * pubTime);
-			cameraVel /= (pubTime + 1.0008f);
+			cameraVel /= (pubTime + 1.00075f);
 		}
 
 		{
@@ -202,7 +215,7 @@ private:
 
 			POINT p;
 			GetCursorPos(&p);
-			mouse = { p.x, p.y };
+			glm::vec2 mouse = { p.x, p.y };
 
 			glm::vec2 center = { ((r.left + r.right) / 2), ((r.top + r.bottom) / 2) };
 
@@ -211,13 +224,15 @@ private:
 				auto diff = (center - mouse);
 
 				yaw += (mouseSens * diff.x);
-				pitch += (mouseSens * (diff.y));
+				pitch -= (mouseSens * (diff.y));
 
 				SetCursorPos(((r.left + r.right) / 2), ((r.top + r.bottom) / 2));
 
-
 				if (pitch >= glm::radians(+80.0f)) pitch = glm::radians(+80.0f);
 				if (pitch <= glm::radians(-80.0f)) pitch = glm::radians(-80.0f);
+				
+				if (roll >= glm::radians(+80.0f)) roll = glm::radians(+80.0f);
+				if (roll <= glm::radians(-80.0f)) roll = glm::radians(-80.0f);
 			}
 		}
 
@@ -355,7 +370,7 @@ private:
 
 	void syncKeyState()
 	{
-		auto ScanHardware = [&]<std::size_t keyCount>(bool* inputSource, std::array<bool, keyCount>&newS, std::array<bool, keyCount>&oldS, std::array<HWButton, keyCount>&state)
+		auto ScanHardware = [&]<std::size_t keyCount>(bool* inputSource, std::array<bool, keyCount>& newS, std::array<bool, keyCount>& oldS, std::array<HWButton, keyCount>& state)
 		{
 			for (auto i = 0z; i < keyCount; ++i)
 			{
@@ -1538,39 +1553,27 @@ private:
 	{
 		UniformBufferObject ubo{};
 
-		cameraLook = { std::cosf(pitch) * std::sinf(yaw), std::sinf(pitch), std::cosf(pitch) * std::cosf(yaw) };
+		//auto mat = glm::toMat4(glm::quat(glm::vec3(pitch, yaw, 0.0f)));
+		
+		auto mat = glm::eulerAngleYXZ(yaw, pitch, roll);
 
-		cameraRight = glm::cross(cameraLook, cameraUp);
-
-#ifdef FREE_CAMERA
-		trueCameraUp = glm::normalize(glm::cross(cameraRight, cameraLook));
-#else
-		trueCameraUp = { 0.0f, 1.0f, 0.0f };
-#endif
-
-		cameraLook += cameraPos;
-
-		cameraDirection = glm::normalize(cameraLook - cameraPos);
-
-		auto l = cameraPos + cameraDirection;
+		cameraRight = { mat[0][0], mat[0][1], mat[0][2] };
+		cameraUp = { mat[1][0], mat[1][1], mat[1][2] };
+		cameraLook = { mat[2][0], mat[2][1], mat[2][2] };
 
 
 		auto trans = glm::translate(glm::vec3(0.0f, 0.0f, 2.0f));
-		auto rotate = glm::rotate(posA, glm::vec3(1.0f, 0.0f, 0.0f));
-
+		//auto rotate = glm::rotate(posA, glm::vec3(1.0f, 0.0f, 0.0f));
+		auto rotate = glm::rotate(0.0f, glm::vec3(1.0f, 0.0f, 0.0f));
 		auto model = trans * rotate;
 
-		auto view = glm::lookAt(cameraPos, l, cameraUp);
-		auto proj = glm::perspective(glm::radians(90.0f), (static_cast<float>(swapChainExtent.width) / static_cast<float>(swapChainExtent.height)), 0.1f, 100.0f);
+		auto view = glm::lookAt(cameraPos, (cameraPos + cameraLook), cameraUp);
+		auto proj = glm::perspective(glm::radians(fov), (static_cast<float>(swapChainExtent.width) / static_cast<float>(swapChainExtent.height)), 0.1f, 100.0f);
 		proj[1][1] *= -1.0f;
 
 		ubo.model = model;
 		ubo.view = view;
 		ubo.proj = proj;
-
-#ifndef FREE_CAMERA
-		cameraDirection = { cameraDirection.x, 0.0f, cameraDirection.z };
-#endif
 
 		void* data;
 		vkMapMemory(device, uniformBuffersMemory[currentImage], 0, sizeof(ubo), 0, &data);

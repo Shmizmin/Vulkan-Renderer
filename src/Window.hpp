@@ -76,6 +76,10 @@ struct HWButton
 	bool released = false;
 
 	HWButton() = default;
+	~HWButton() = default;
+
+	HWButton(const HWButton& ) = delete;
+	HWButton(const HWButton&&) = delete;
 };
 
 struct Window32
