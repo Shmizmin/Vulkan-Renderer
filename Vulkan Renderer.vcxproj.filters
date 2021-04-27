@@ -56,9 +56,12 @@
     <None Include="shaders\frag.hlsl">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="src\Source.cpp">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Source.cpp">
+    <ClCompile Include="test.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

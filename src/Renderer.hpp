@@ -19,6 +19,8 @@
 #include "./stb_image.hpp"
 #include "./tiny_obj_loader.hpp"
 
+#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
+#define GLM_FORCE_SIMD_AVX2
 #include <glm.hpp>
 #include <gtx\euler_angles.hpp>
 #include <vulkan/vulkan.h>
@@ -510,7 +512,8 @@ private:
 			if (isDeviceSuitable(device))
 			{
 				physicalDevice = device;
-				msaaSamples = getMaxUsableSampleCount();
+				//msaaSamples = getMaxUsableSampleCount();
+				msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 				break;
 			}
 		}
@@ -794,8 +797,8 @@ private:
 		rasterizer.rasterizerDiscardEnable = VK_FALSE;
 		rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
 		rasterizer.lineWidth = 1.0f;
-		//rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-		rasterizer.cullMode = VK_CULL_MODE_NONE;
+		rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+		//rasterizer.cullMode = VK_CULL_MODE_NONE;
 		rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 		rasterizer.depthBiasEnable = VK_FALSE;
 
@@ -1549,26 +1552,29 @@ private:
 		}
 	}
 
+	const glm::vec3 t = glm::vec3(0.0f, 0.0f, 2.0f);
+	const glm::vec3 a = glm::vec3(1.0f, 0.0f, 0.0f);
+
 	void updateUniformBuffer(std::uint32_t currentImage)
 	{
 		UniformBufferObject ubo{};
 
 		//auto mat = glm::toMat4(glm::quat(glm::vec3(pitch, yaw, 0.0f)));
 		
-		auto mat = glm::eulerAngleYXZ(yaw, pitch, roll);
+		const auto& mat = glm::eulerAngleYXZ(yaw, pitch, roll);
 
 		cameraRight = { mat[0][0], mat[0][1], mat[0][2] };
 		cameraUp = { mat[1][0], mat[1][1], mat[1][2] };
 		cameraLook = { mat[2][0], mat[2][1], mat[2][2] };
 
 
-		auto trans = glm::translate(glm::vec3(0.0f, 0.0f, 2.0f));
+		auto trans = glm::translate(t);
 		//auto rotate = glm::rotate(posA, glm::vec3(1.0f, 0.0f, 0.0f));
-		auto rotate = glm::rotate(0.0f, glm::vec3(1.0f, 0.0f, 0.0f));
+		auto rotate = glm::rotate(0.0f, a);
 		auto model = trans * rotate;
 
 		auto view = glm::lookAt(cameraPos, (cameraPos + cameraLook), cameraUp);
-		auto proj = glm::perspective(glm::radians(fov), (static_cast<float>(swapChainExtent.width) / static_cast<float>(swapChainExtent.height)), 0.1f, 100.0f);
+		auto proj = glm::perspective(glm::radians(fov), (static_cast<float>(swapChainExtent.width) / static_cast<float>(swapChainExtent.height)), 0.1f, 1000.0f);
 		proj[1][1] *= -1.0f;
 
 		ubo.model = model;

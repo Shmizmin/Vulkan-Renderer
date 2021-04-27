@@ -46,7 +46,8 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Source.cpp" />
+    <None Include="src\Source.cpp" />
+    <ClCompile Include="test.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -137,6 +138,8 @@
       <AdditionalModuleDependencies>
       </AdditionalModuleDependencies>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -247,6 +250,8 @@
       <AdditionalModuleDependencies>
       </AdditionalModuleDependencies>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
